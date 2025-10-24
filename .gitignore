@@ -1,0 +1,48 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.mypy_cache/
+
+# Node / UI
+node_modules/
+ui/web/node_modules/
+ui/web/dist/
+npm-debug.log*
+yarn-debug.log*
+pnpm-lock.yaml
+
+# Build / docker
+build/
+dist/
+*.log
+*.sqlite3
+graph_aml.db
+docker/*.tar
+
+# Data (keep examples only)
+data/raw/*
+!data/raw/.gitkeep
+data/interim/*
+!data/interim/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+models/*/*
+!models/baseline/.gitkeep
+!models/gnn/.gitkeep
+
+# Notebooks
+notebooks/.ipynb_checkpoints/

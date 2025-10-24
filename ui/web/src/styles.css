@@ -1,0 +1,31 @@
+:root { --bg:#0b1020; --card:#111a2e; --ink:#e6e9f5; --muted:#97a0bf; --accent:#5aa0ff; --ok:#20c997; --err:#ff6b6b; }
+*{box-sizing:border-box} body,#root{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+.page{padding:16px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.brand{font-size:20px;font-weight:700}
+.grid{display:grid;grid-template-columns: 360px 1fr; gap:16px}
+.col{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 0 0 1px rgba(255,255,255,.04)}
+.card-title{display:flex;align-items:center;justify-content:space-between;font-weight:600;margin-bottom:10px}
+.table{display:flex;flex-direction:column;gap:4px}
+.thead,.row{display:grid;grid-template-columns: 1fr 80px; gap:8px;align-items:center}
+.thead{color:var(--muted);font-weight:600;margin-bottom:4px}
+.row.link{cursor:pointer;background:transparent;border:0;color:inherit;text-align:left;padding:6px 8px;border-radius:10px}
+.row.link:hover{background:rgba(255,255,255,.04)}
+.input{flex:1;min-width:0;background:#0c1426;color:var(--ink);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px}
+.btn{background:var(--accent);color:#03102a;border:0;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+.btn:hover{filter:brightness(1.05)}
+.btn.small{padding:6px 10px;font-size:12px}
+.btn.subtle{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.1)}
+.badge.ok{background:rgba(32,201,151,.15);color:#7cf2cf;border:1px solid rgba(32,201,151,.35);border-radius:999px;padding:2px 8px;margin:0 8px}
+.error{color:var(--err);white-space:pre-wrap}
+.error.small{font-size:12px}
+.muted{color:var(--muted)}
+.subtle{color:var(--muted);font-size:12px;margin:6px 0}
+.kv{display:grid;grid-template-columns:120px 1fr; gap:6px}
+.mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+.why{background:#0e1a33;border:1px solid rgba(255,255,255,.06);padding:10px;border-radius:10px;margin:8px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:6px 0;list-style:none}
+.chip{background:#0e1a33;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:6px 10px}
+.token-box{display:flex;gap:12px;align-items:center}
+.token-box .input{max-width:260px}

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop, "**/feature/**", "**/fix/**" ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-test-e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dev Doctor (.env, dirs)
+        run: bash scripts/dev_doctor.sh
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Unit tests (dockerized)
+        run: docker compose --profile test run --rm tests
+
+      - name: Bring up stack
+        run: docker compose --profile dev up -d
+
+      - name: Wait for API health
+        run: bash scripts/wait_for_http.sh http://localhost:8000/api/v1/health 180
+
+      - name: End-to-end smoke
+        run: bash scripts/smoke_e2e.sh
+
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color > compose_logs.txt || true
+
+      - name: Upload compose logs (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-logs
+          path: compose_logs.txt
+
+      - name: Compose down
+        if: always()
+        run: docker compose down -v
+

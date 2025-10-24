@@ -1,0 +1,85 @@
+name: graph-aml
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    image: aegis-graph-aml-api:dev
+    container_name: graph-aml-api
+    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/work
+    working_dir: /work
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    profiles: ["dev"]
+
+  ui:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ui
+      target: serve
+      args:
+        VITE_API_BASE: http://localhost:8000
+        # VITE_DEFAULT_TOKEN will be injected dynamically by Makefile for demo-protected
+        # VITE_DEFAULT_TOKEN: demo123
+        # VITE_DEFAULT_TOKEN: demo123   # optional: pre-seed token for demo
+    image: aegis-graph-aml-ui:dev
+    container_name: graph-aml-ui
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+    profiles: ["dev"]
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: graph-aml-neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/testtest
+      - NEO4J_PLUGINS=["apoc","graph-data-science"]
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    profiles: ["dev","test"]
+
+  tests:
+    image: aegis-graph-aml-api:dev
+    container_name: graph-aml-tests
+    env_file: .env
+    working_dir: /work
+    command: >
+      bash -lc "
+      set -euo pipefail;
+      echo '🔧 Running pytest inside container...';
+      pytest -q;
+      "
+    volumes:
+      - .:/work
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    profiles: ["test"]
+
+volumes:
+  neo4j_data:
+  neo4j_logs:

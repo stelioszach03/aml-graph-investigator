@@ -1,0 +1,17 @@
+FROM node:20-alpine AS build
+WORKDIR /app
+ARG VITE_API_BASE
+ARG VITE_DEFAULT_TOKEN
+ENV VITE_API_BASE=${VITE_API_BASE}
+ENV VITE_DEFAULT_TOKEN=${VITE_DEFAULT_TOKEN}
+COPY ui/web /app
+RUN (npm ci || npm install) && npm run build
+
+FROM node:20-alpine AS serve
+WORKDIR /app
+RUN npm i -g serve
+COPY --from=build /app/dist /app/dist
+EXPOSE 5173
+HEALTHCHECK --interval=10s --timeout=3s --retries=10 CMD \
+  wget -qO- http://localhost:5173 >/dev/null 2>&1 || exit 1
+CMD ["serve", "-s", "dist", "-l", "5173"]

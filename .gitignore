@@ -46,3 +46,31 @@ models/*/*
 
 # Notebooks
 notebooks/.ipynb_checkpoints/
+# Python venv & caches
+.venv/
+__pycache__/
+.pytest_cache/
+
+# Local DB & models
+graph_aml.db
+models/baseline/*
+!models/baseline/.gitkeep
+models/gnn/*
+!models/gnn/.gitkeep
+
+# Data artifacts
+data/raw/*
+!data/raw/.gitkeep
+data/interim/*
+!data/interim/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# UI build
+ui/web/dist/
+ui/web/node_modules/
+
+# Env files
+.env
+.env.*
+!.env.example

@@ -13,6 +13,9 @@ jobs:
     permissions:
       contents: read
       actions: read
+    env:
+      DOCKER_BUILDKIT: "1"
+      COMPOSE_DOCKER_CLI_BUILD: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,7 +24,8 @@ jobs:
         run: bash scripts/dev_doctor.sh
 
       - name: Build images
-        run: docker compose build
+        run: |
+          docker compose build api ui
 
       - name: Unit tests (dockerized)
         run: docker compose --profile test run --rm tests
@@ -32,8 +36,14 @@ jobs:
       - name: Wait for API health
         run: bash scripts/wait_for_http.sh http://localhost:8000/api/v1/health 180
 
-      - name: End-to-end smoke
-        run: bash scripts/smoke_e2e.sh
+      - name: E2E pipeline (inside api)
+        run: |
+          docker compose exec -T api bash -lc '
+            python scripts/generate_synth.py --n_accounts 3000 --fraud_rings 8 --seed 42 &&
+            python scripts/ingest_demo.py --path data/raw/synth_edges.csv --neo4j 0 &&
+            python -m app.ml.train_lgbm --features models/baseline/features.parquet --labels data/processed/labels.csv --out models/baseline &&
+            python scripts/score_demo.py --topk 50
+          '
 
       - name: Compose logs on failure
         if: failure()
@@ -49,4 +59,3 @@ jobs:
       - name: Compose down
         if: always()
         run: docker compose down -v
-

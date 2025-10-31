@@ -1,10 +1,10 @@
 name: graph-aml
 services:
   api:
+    image: aegis-graph-aml-api:dev
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    image: aegis-graph-aml-api:dev
     container_name: graph-aml-api
     env_file: .env
     environment:

@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import os, sys
+here = os.path.dirname(os.path.abspath(__file__))
+repo = os.path.abspath(os.path.join(here, ".."))
+if repo not in sys.path:
+    sys.path.insert(0, repo)
+
 import argparse
 from pathlib import Path
 

@@ -71,6 +71,7 @@ ui-build:
 demo-run-docker:
 	# Run pipeline inside api container (no host deps)
 	docker compose exec -T api bash -lc '\
+	set -euo pipefail; cd /work && \
 	python scripts/generate_synth.py --n_accounts 3000 --fraud_rings 8 --seed 42 && \
 	python scripts/ingest_demo.py --path data/raw/synth_edges.csv --neo4j 0 && \
 	python -m app.ml.train_lgbm --features models/baseline/features.parquet --labels data/processed/labels.csv --out models/baseline && \

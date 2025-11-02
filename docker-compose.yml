@@ -9,6 +9,7 @@ services:
     env_file: .env
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work
     volumes:
       - .:/work
     working_dir: /work
@@ -67,6 +68,8 @@ services:
     container_name: graph-aml-tests
     env_file: .env
     working_dir: /work
+    environment:
+      - PYTHONPATH=/work
     command: >
       bash -lc "
       set -euo pipefail;

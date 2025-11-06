@@ -176,3 +176,14 @@ def predict_graph_nodes(G: nx.Graph, model_path: Path) -> pd.DataFrame:
         proba = model.predict(X)
     df = pd.DataFrame({"node": X.index.astype(str), "score": proba})
     return df
+
+
+def load_model_artifacts(model_dir: Path | str):
+    """
+    Back-compat wrapper: returns (model, feature_list).
+    New code should use load_model(model_dir) which returns (model, feature_list, medians).
+    """
+    loaded = load_model(model_dir)
+    if isinstance(loaded, tuple) and len(loaded) >= 2:
+        return loaded[0], loaded[1]
+    raise RuntimeError("Unexpected load_model() return")

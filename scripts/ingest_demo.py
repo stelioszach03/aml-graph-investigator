@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import os, sys
-here = os.path.dirname(os.path.abspath(__file__))
-repo = os.path.abspath(os.path.join(here, ".."))
-if repo not in sys.path:
-    sys.path.insert(0, repo)
+from _path_guard import *  # noqa: F401
 
 import argparse
 import os
+import time
 from pathlib import Path
 
 import httpx
@@ -20,12 +17,26 @@ from app.graph.features import compute_node_features, persist_node_features
 
 def call_api_or_fallback(path: Path, push_neo4j: bool) -> None:
     log = get_logger("scripts.ingest")
-    base = os.getenv("API_BASE", "http://localhost:8000")
+    # Select API base: prefer docker service name inside containers
+    DEFAULTS = ["http://api:8000", "http://localhost:8000"]
+    API_BASE = os.getenv("API_BASE")
+    if not API_BASE:
+        for candidate in DEFAULTS:
+            try:
+                r = httpx.get(f"{candidate}/api/v1/health", timeout=2.0)
+                if r.status_code == 200:
+                    API_BASE = candidate
+                    break
+            except Exception:
+                continue
+    if not API_BASE:
+        API_BASE = "http://localhost:8000"
+
     token = os.getenv("API_AUTH_TOKEN")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     try:
-        with httpx.Client(timeout=10.0) as client:
-            resp = client.post(f"{base}/api/v1/ingest", json={"path": str(path), "push_neo4j": bool(push_neo4j)}, headers=headers)
+        with httpx.Client(timeout=8.0) as client:
+            resp = client.post(f"{API_BASE}/api/v1/ingest", json={"path": str(path), "push_neo4j": bool(push_neo4j)}, headers=headers)
             if resp.status_code == 200:
                 log.info("Ingested via API: {}", resp.json())
                 return

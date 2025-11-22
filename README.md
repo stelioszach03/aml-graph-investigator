@@ -3,7 +3,7 @@
 End-to-end graph-based AML/KYC pipeline with explainability and a clean UI.
 
 ## Why it matters
-- Graph thinking surfaces rings (smurfing, fan-out, collusion) που δεν φαίνονται σε row-wise ML.
+- Graph thinking surfaces rings (smurfing, fan-out, collusion) that are often missed by row-wise ML.
 - Explainability (paths + feature contributions) → audit-friendly.
 - One-command demo with Docker + CI to prove it works.
 

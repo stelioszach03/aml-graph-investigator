@@ -1,7 +1,7 @@
 export type FetchError = { status: number; message: string; body?: string };
 
-const envBase = (import.meta as any)?.env?.VITE_API_BASE as string | undefined;
-const defaultToken = (import.meta as any)?.env?.VITE_DEFAULT_TOKEN as string | undefined;
+const envBase = import.meta.env.VITE_API_BASE as string | undefined;
+const defaultToken = import.meta.env.VITE_DEFAULT_TOKEN as string | undefined;
 
 (function seedDefaultToken(){
   try {
@@ -16,6 +16,10 @@ function detectBase(): string {
   try {
     const loc = window.location;
     if (loc.port === '5173') return 'http://localhost:8000';
+    // Production path deployment under /aegis-graph-aml
+    if (loc.pathname.startsWith('/aegis-graph-aml')) {
+      return `${loc.protocol}//${loc.host}/aegis-graph-aml`;
+    }
     return `${loc.protocol}//${loc.host}`;
   } catch { return 'http://localhost:8000'; }
 }

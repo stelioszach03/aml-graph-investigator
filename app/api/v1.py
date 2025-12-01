@@ -94,6 +94,34 @@ async def ingest(body: IngestBody):
     df_feat, meta = compute_node_features(G)
     out_path = persist_node_features(df_feat)
 
+    # Build labels_all.csv (positives from labels.csv + implicit negatives from feature index)
+    labels_all_path = None
+    labels_all_rows = None
+    try:
+        processed_dir = Path(settings.data_dir) / "processed"
+        labels_csv = processed_dir / "labels.csv"
+        if labels_csv.exists():
+            df_nodes = pd.DataFrame({"node_id": df_feat.index.astype(str)})
+            df_lbl = pd.read_csv(labels_csv)
+            if "node_id" not in df_lbl.columns and "node" in df_lbl.columns:
+                df_lbl = df_lbl.rename(columns={"node": "node_id"})
+            label_col = "y" if "y" in df_lbl.columns else ("label" if "label" in df_lbl.columns else None)
+            if "node_id" in df_lbl.columns and label_col:
+                df_lbl = df_lbl[["node_id", label_col]].copy()
+                df_lbl = df_lbl.rename(columns={label_col: "y"})
+                df_lbl["node_id"] = df_lbl["node_id"].astype(str)
+                df_lbl["y"] = df_lbl["y"].fillna(0).astype(int)
+
+                df_all = df_nodes.merge(df_lbl, how="left", on="node_id")
+                df_all["y"] = df_all["y"].fillna(0).astype(int)
+                labels_all = processed_dir / "labels_all.csv"
+                labels_all.parent.mkdir(parents=True, exist_ok=True)
+                df_all.to_csv(labels_all, index=False)
+                labels_all_path = str(labels_all)
+                labels_all_rows = int(len(df_all))
+    except Exception as e:
+        log.warning("Failed to build labels_all.csv during ingest: {}", e)
+
     # refresh global cache
     global _graph
     _graph = G
@@ -103,6 +131,8 @@ async def ingest(body: IngestBody):
         "edges": int(G.number_of_edges()),
         "features_path": str(out_path),
         "n_features": int(df_feat.shape[1]),
+        "labels_all_path": labels_all_path,
+        "labels_all_rows": labels_all_rows,
     }
 
 

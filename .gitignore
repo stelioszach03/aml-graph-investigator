@@ -12,11 +12,13 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+.pytest_cache/
+.mypy_cache/
+
+# Env files
 .env
 .env.*
 !.env.example
-.pytest_cache/
-.mypy_cache/
 
 # Node / UI
 node_modules/
@@ -26,7 +28,7 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-lock.yaml
 
-# Build / docker
+# Build / runtime artifacts
 build/
 dist/
 *.log
@@ -34,44 +36,23 @@ dist/
 graph_aml.db
 docker/*.tar
 
-# Data (keep examples only)
+# Data artifacts (keep placeholders)
 data/raw/*
 !data/raw/.gitkeep
 data/interim/*
 !data/interim/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
-models/*/*
-!models/baseline/.gitkeep
-!models/gnn/.gitkeep
 
-# Notebooks
-notebooks/.ipynb_checkpoints/
-# Python venv & caches
-.venv/
-__pycache__/
-.pytest_cache/
-
-# Local DB & models
-graph_aml.db
+# Models (keep placeholders)
 models/baseline/*
 !models/baseline/.gitkeep
 models/gnn/*
 !models/gnn/.gitkeep
 
-# Data artifacts
-data/raw/*
-!data/raw/.gitkeep
-data/interim/*
-!data/interim/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
+# Notebooks
+notebooks/.ipynb_checkpoints/
 
-# UI build
-ui/web/dist/
-ui/web/node_modules/
-
-# Env files
-.env
-.env.*
-!.env.example
+# Local backups
+*.bak
+*.bak-*

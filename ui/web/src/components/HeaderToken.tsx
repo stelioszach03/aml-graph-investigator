@@ -2,32 +2,64 @@ import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
 export default function HeaderToken() {
-  const [val, setVal] = useState<string>(() => localStorage.getItem("API_TOKEN") || "");
+  const [val, setVal] = useState<string>(() => {
+    try {
+      return localStorage.getItem("API_TOKEN") || "";
+    } catch {
+      return "";
+    }
+  });
   const [prot, setProt] = useState<boolean | null>(null);
 
   useEffect(() => {
-    api.authStatus().then(j => {
-      if (typeof j?.protected === "boolean") setProt(j.protected);
-    }).catch(() => setProt(null));
+    api
+      .authStatus()
+      .then((j: any) => {
+        if (typeof j?.protected === "boolean") setProt(j.protected);
+      })
+      .catch(() => setProt(null));
   }, []);
 
-  if (prot === false) return null; // Open API → hide box
+  // Open API → hide entirely
+  if (prot === false) return null;
 
-  const save = () => { localStorage.setItem("API_TOKEN", val.trim()); window.location.reload(); };
-  const clear = () => { localStorage.removeItem("API_TOKEN"); window.location.reload(); };
+  const save = () => {
+    try {
+      localStorage.setItem("API_TOKEN", val.trim());
+      window.location.reload();
+    } catch {}
+  };
+
+  const clear = () => {
+    try {
+      localStorage.removeItem("API_TOKEN");
+      window.location.reload();
+    } catch {}
+  };
+
+  const hasToken = !!(val && val.trim());
 
   return (
     <div className="token-box">
-      <span className="muted">Auth: {prot === null ? "…" : prot ? "Protected" : "Open"}</span>
-      {localStorage.getItem("API_TOKEN") ? (
+      {hasToken ? (
         <>
-          <span className="badge ok">Token set</span>
-          <button className="btn subtle" onClick={clear}>Clear</button>
+          <span className="badge ok">AUTH OK</span>
+          <button className="btn small subtle" onClick={clear}>
+            Clear
+          </button>
         </>
       ) : (
         <>
-          <input className="input" placeholder="Paste Bearer token" value={val} onChange={(e)=>setVal(e.target.value)} />
-          <button className="btn" onClick={save}>Save Token</button>
+          <input
+            className="input"
+            style={{ width: 180, fontSize: "0.68rem", padding: "7px 10px" }}
+            placeholder="Bearer token"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+          />
+          <button className="btn small" onClick={save}>
+            Save
+          </button>
         </>
       )}
     </div>

@@ -1,5 +1,7 @@
 <div align="center">
 
+[![CI](https://github.com/stelioszach03/aml-graph-investigator/actions/workflows/ci.yml/badge.svg)](https://github.com/stelioszach03/aml-graph-investigator/actions)
+
 # Aegis · Graph AML Investigator
 
 **Graph-native anti-money-laundering investigation platform with explainable LightGBM scoring, path-level reason codes, and a live React investigator console.**

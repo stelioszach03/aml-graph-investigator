@@ -130,6 +130,7 @@ def compute_node_features(G: nx.Graph) -> Tuple[pd.DataFrame, Dict[str, object]]
 
     DG = _simplify_to_digraph(G)
     UG = _undirected_simple(G)
+    n_nodes = len(nodes)
 
     # Degrees
     deg_in = dict(DG.in_degree()) if DG.is_directed() else dict(DG.degree())
@@ -141,9 +142,14 @@ def compute_node_features(G: nx.Graph) -> Tuple[pd.DataFrame, Dict[str, object]]
     except Exception:
         pr = {n: 0.0 for n in nodes}
 
-    # Betweenness centrality (can be expensive)
+    # Betweenness centrality is expensive on larger graphs.
+    # For large node sets we use a sampled approximation to keep API ingest responsive.
     try:
-        btw = nx.betweenness_centrality(DG, normalized=True)
+        if n_nodes > 1200:
+            k = max(32, min(256, int(n_nodes * 0.08)))
+            btw = nx.betweenness_centrality(DG, normalized=True, k=k, seed=42)
+        else:
+            btw = nx.betweenness_centrality(DG, normalized=True)
     except Exception:
         btw = {n: 0.0 for n in nodes}
 
@@ -153,11 +159,12 @@ def compute_node_features(G: nx.Graph) -> Tuple[pd.DataFrame, Dict[str, object]]
     except Exception:
         clust = {n: 0.0 for n in nodes}
 
-    # Ego density radius=2
+    # Ego density (radius=2 on smaller graphs, radius=1 on larger graphs)
+    ego_radius = 1 if n_nodes > 1200 else 2
     ego_density = {}
     for n in nodes:
         try:
-            ego = nx.ego_graph(UG, n, radius=2)
+            ego = nx.ego_graph(UG, n, radius=ego_radius)
             ego_density[n] = float(nx.density(ego))
         except Exception:
             ego_density[n] = 0.0
@@ -203,9 +210,13 @@ def compute_node_features(G: nx.Graph) -> Tuple[pd.DataFrame, Dict[str, object]]
     except Exception:
         tri = {n: 0.0 for n in nodes}
 
-    # HITS hubs/authorities on directed simplified graph
+    # HITS can also be heavy for larger graphs; skip there to keep latency bounded.
     try:
-        hubs, auths = nx.hits(DG, max_iter=1000, normalized=True)
+        if n_nodes > 1200:
+            hubs = {n: 0.0 for n in nodes}
+            auths = {n: 0.0 for n in nodes}
+        else:
+            hubs, auths = nx.hits(DG, max_iter=250, normalized=True)
     except Exception:
         hubs = {n: 0.0 for n in nodes}
         auths = {n: 0.0 for n in nodes}

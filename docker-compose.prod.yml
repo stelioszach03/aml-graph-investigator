@@ -1,0 +1,10 @@
+services:
+  api:
+    ports:
+      - "18300:8000"
+  neo4j:
+    ports: []
+  ui:
+    profiles: ["disabled"]
+  tests:
+    profiles: ["disabled"]

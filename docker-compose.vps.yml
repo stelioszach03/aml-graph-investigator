@@ -1,0 +1,59 @@
+services:
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      - NEO4J_AUTH=neo4j/testtest
+      - NEO4J_PLUGINS=["apoc","graph-data-science"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work
+    volumes:
+      - .:/work
+    working_dir: /work
+    ports:
+      - "18300:8000"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  ui:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ui
+      target: serve
+      args:
+        VITE_API_BASE: /aegis-graph-aml
+        VITE_BASE: /aegis-graph-aml/
+    ports:
+      - "18730:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5173 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  neo4j_data:
+  neo4j_logs:

@@ -8,6 +8,7 @@ export default function ScoreTable({ onSelect }: { onSelect: (id: string) => voi
   const [midRows, setMidRows] = useState<Row[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [needsBootstrap, setNeedsBootstrap] = useState(false);
   const [decimals, setDecimals] = useState<3 | 6>(6);
   const [constant, setConstant] = useState(false);
   const [minMax, setMinMax] = useState<{min:number; max:number} | null>(null);
@@ -17,8 +18,23 @@ export default function ScoreTable({ onSelect }: { onSelect: (id: string) => voi
     return arr as Row[];
   };
 
+  const parseErr = (e:any): string => {
+    if (e?.status === 409) {
+      return "Model not initialized yet. Click 'Initialize demo' to run ingest + train automatically.";
+    }
+    const body = typeof e?.body === "string" ? e.body : "";
+    if (body) {
+      try {
+        const parsed = JSON.parse(body);
+        if (parsed?.detail) return String(parsed.detail);
+      } catch {}
+      return body;
+    }
+    return e?.message || "Failed to load scores";
+  };
+
   const loadTop = async () => {
-    setLoading(true); setErr(null);
+    setLoading(true); setErr(null); setNeedsBootstrap(false);
     try {
       const j = await api.score(100);         // top 100
       const arr = parseArray(j);
@@ -30,12 +46,13 @@ export default function ScoreTable({ onSelect }: { onSelect: (id: string) => voi
       const equalAll = Boolean(j?.constant_scores) || (scores.length>1 && (max - min < 1e-9));
       setConstant(equalAll);
     } catch (e:any) {
-      setErr(e?.body || e?.message || "Failed to load scores");
+      setErr(parseErr(e));
+      setNeedsBootstrap(e?.status === 409);
     } finally { setLoading(false); }
   };
 
   const loadMid = async () => {
-    setLoading(true); setErr(null); setMidRows(null);
+    setLoading(true); setErr(null); setMidRows(null); setNeedsBootstrap(false);
     try {
       const j = await api.score(1000);        // request larger slice
       const arr = parseArray(j);
@@ -48,8 +65,22 @@ export default function ScoreTable({ onSelect }: { onSelect: (id: string) => voi
         setMidRows(arr.slice(Math.max(0, mid-10), Math.min(arr.length, mid+10)));
       }
     } catch (e:any) {
-      setErr(e?.body || e?.message || "Failed to load mid-range");
+      setErr(parseErr(e));
+      setNeedsBootstrap(e?.status === 409);
     } finally { setLoading(false); }
+  };
+
+  const initializeDemo = async () => {
+    setLoading(true); setErr(null);
+    try {
+      await api.ingest("data/raw/synth_edges.csv", false);
+      await api.train("data/processed/labels_all.csv");
+      await loadTop();
+    } catch (e:any) {
+      setErr(parseErr(e));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { loadTop(); }, []);
@@ -70,6 +101,13 @@ export default function ScoreTable({ onSelect }: { onSelect: (id: string) => voi
       </div>
 
       {err && <div className="error">{err}</div>}
+      {needsBootstrap && (
+        <div style={{marginTop:8, marginBottom:8}}>
+          <button className="btn small" onClick={initializeDemo} disabled={loading}>
+            {loading ? "Initializing…" : "Initialize demo"}
+          </button>
+        </div>
+      )}
 
       {minMax && (
         <div className="subtle">

@@ -98,3 +98,15 @@ Ensure `.env.example` contains:
 - API_AUTH_TOKEN (empty by default)
 - GRAPH_PAGE_RANK_ALPHA, EXPLAIN_MAX_PATH_LEN, EXPLAIN_K_PATHS
 
+
+## VPS Subpath Deployment
+Use the included VPS compose file for a subpath deployment (e.g. `/aegis-graph-aml/`):
+
+```bash
+docker compose -f docker-compose.vps.yml build
+docker compose -f docker-compose.vps.yml up -d
+```
+
+Notes:
+- UI is built with `VITE_BASE=/aegis-graph-aml/` and `VITE_API_BASE=/aegis-graph-aml`.
+- If `POST /api/v1/score` returns `409` (no model cache), use UI button `Initialize demo` or run ingest+train first.

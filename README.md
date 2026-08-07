@@ -25,11 +25,14 @@
 
 Aegis AML ingests a directed transaction graph, engineers **14 topology and flow features per node** (degree, PageRank, betweenness, triad motifs, ego density, txn amount sums, avg neighbor degree, clustering, hub/authority), trains a **LightGBM binary classifier**, and surfaces ranked suspects with **path-level explanations** and **what-if simulation**. Every alert is case-openable in a React investigator console with mini-graph view, neighborhood expansion, and local-surrogate explanation.
 
-> Not a toy. The live deployment has **3 061 nodes and 51 758 edges**, a trained model with **ROC-AUC 0.87** / **PR-AUC 0.69** / **Brier 0.047**, and real-time scoring over the full population.
+> **The graph is synthetic.** All 3 061 nodes / 51 758 edges come from
+> [`scripts/generate_synth.py`](scripts/generate_synth.py) (seeded), including the
+> fraud-ring motifs that produce the labels. The demo deployment scores that
+> graph in real time. No real AML data has been used.
 
 ## Highlights
 
-- **End-to-end graph ML pipeline** — one `make ingest` + `make train` and the model is shipped, metrics are persisted to SQLite, and artifacts land in `models/baseline/`.
+- **End-to-end graph ML pipeline** — `make synth && make ingest && make score` builds the graph, computes features and scores every node; training via `POST /api/v1/train` persists metrics to SQLite and artifacts to `models/baseline/`.
 - **14 hand-engineered topology features** — pure NetworkX, zero external graph ML library, so every signal is auditable.
 - **LightGBM with honest evaluation** — stratified train/val split, ROC-AUC / PR-AUC / Brier / precision@K, feature importances reported as raw gains.
 - **Explainable scoring** — local surrogate contributions + k-shortest-path rationales + ego-graph summarization per case.
@@ -75,9 +78,10 @@ flowchart LR
 | 13 | `hub_score` | Topology | HITS hub score |
 | 14 | `authority_score` | Topology | HITS authority score |
 
-## Live Model Quality
+## Model Quality — on synthetic data
 
-Reported on the current deployment after `/train` on the full graph:
+Reported by the deployment after `POST /api/v1/train` on the full synthetic graph
+(stratified split, LightGBM binary classifier):
 
 | Metric | Value |
 |--------|------:|
@@ -87,6 +91,15 @@ Reported on the current deployment after `/train` on the full graph:
 | Precision @ 100 | **0.200** |
 | Precision @ 500 | 0.0817 |
 | Precision @ 1000 | 0.0817 |
+
+> **Provenance:** these come from a training run against the generated graph.
+> Trained artifacts are not committed — `models/baseline/` holds only a
+> `.gitkeep`, so the table cannot be verified offline. Reproduce it with
+> `python scripts/generate_synth.py && python scripts/ingest_demo.py` then
+> `POST /api/v1/train`, or read the live value from
+> [`GET /api/v1/metrics/last`](https://stelioszach.com/aegis-graph-aml/api/v1/metrics/last).
+> A model that separates a generator's own fraud motifs is a working pipeline,
+> not evidence of real-world AML performance.
 
 Top-5 feature importances (LightGBM gain):
 
@@ -140,8 +153,8 @@ curl -s -X POST https://stelioszach.com/aegis-graph-aml/api/v1/score \
 ### Docker (recommended)
 
 ```bash
-git clone https://github.com/stelioszach03/aegis-graph-aml.git
-cd aegis-graph-aml
+git clone https://github.com/stelioszach03/aml-graph-investigator.git
+cd aml-graph-investigator
 cp .env.example .env
 
 docker compose -f docker-compose.vps.yml up -d --build
@@ -231,10 +244,27 @@ data/                       raw/ (synth_edges.csv), interim/ (graph.pkl), proces
 ## Testing
 
 ```bash
-make setup
-make test              # pytest unit tests
-make smoke             # end-to-end: ingest → train → score → case → explain
+make install                 # venv + requirements
+make test                    # pytest unit tests
+bash scripts/smoke_e2e.sh    # end-to-end: ingest → train → score → case → explain
 ```
+
+## Limitations
+
+- **Synthetic data end to end.** Graph, labels and fraud motifs all come from
+  `scripts/generate_synth.py`. The reported metrics measure how well LightGBM
+  recovers that generator's patterns — they do not transfer to real AML data.
+- **No committed model artifact.** `models/baseline/` is empty in git, so the
+  metrics table is reproducible but not independently verifiable from the repo.
+- **`app/ml/gnn_optional.py` is a placeholder.** The shipped model is LightGBM on
+  14 precomputed node features; there is no graph neural network.
+- **Features are recomputed on the full graph.** Betweenness and HITS are
+  global, so ingest cost grows superlinearly — this is a batch pipeline, not a
+  streaming one.
+- **Explanations are local surrogates**, not exact attributions; k-shortest-path
+  rationales are capped by `EXPLAIN_MAX_PATH_LEN`.
+
+---
 
 ## Roadmap
 
